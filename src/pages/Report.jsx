@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Camera, Upload, X, Send, CheckCircle } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useReports } from '../context/ReportsContext';
+import { getUserFromToken } from '../utils/getUserFromToken';
 
 
 const Report = ({ onBackToHome }) => {
@@ -12,24 +14,26 @@ const Report = ({ onBackToHome }) => {
   const [location, setLocation] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submittedReportId, setSubmittedReportId] = useState('');
 
   const navigate = useNavigate();
+  const { addReport } = useReports();
 
   
 
   const incidentTypes = [
-    { id: 'pothole', label: 'Pothole', icon: '🕳️', desc: 'Road surface damage' },
-    { id: 'bridge', label: 'Bridge Issue', icon: '🌉', desc: 'Structural problems' },
-    { id: 'bend', label: 'Dangerous Bend', icon: '🔄', desc: 'Sharp or blind curves' },
-    { id: 'lighting', label: 'Poor Lighting', icon: '💡', desc: 'Inadequate street lights' },
-    { id: 'signage', label: 'Missing Signs', icon: '🚧', desc: 'Traffic or warning signs' },
-    { id: 'other', label: 'Other', icon: '⚠️', desc: 'Other safety concerns' }
+    { id: 'pothole', label: 'Pothole', icon: '🕳️', desc: 'Road surface damage', typeLabel: 'Pothole' },
+    { id: 'bridge', label: 'Bridge Issue', icon: '🌉', desc: 'Structural problems', typeLabel: 'Bridge Issue' },
+    { id: 'bend', label: 'Dangerous Bend', icon: '🔄', desc: 'Sharp or blind curves', typeLabel: 'Dangerous Bend' },
+    { id: 'lighting', label: 'Poor Lighting', icon: '💡', desc: 'Inadequate street lights', typeLabel: 'Poor Lighting' },
+    { id: 'signage', label: 'Missing Signs', icon: '🚧', desc: 'Traffic or warning signs', typeLabel: 'Missing Signs' },
+    { id: 'other', label: 'Other', icon: '⚠️', desc: 'Other safety concerns', typeLabel: 'Other' }
   ];
 
   const severityLevels = [
-    { id: 'low', label: 'Low Risk', color: 'yellow', desc: 'Minor inconvenience' },
-    { id: 'medium', label: 'Medium Risk', color: 'orange', desc: 'Potential hazard' },
-    { id: 'high', label: 'High Risk', color: 'red', desc: 'Immediate danger' }
+    { id: 'low', label: 'Low Risk', color: 'yellow', desc: 'Minor inconvenience', severityLabel: 'Low Risk' },
+    { id: 'medium', label: 'Medium Risk', color: 'orange', desc: 'Potential hazard', severityLabel: 'Medium Risk' },
+    { id: 'high', label: 'High Risk', color: 'red', desc: 'Immediate danger', severityLabel: 'High Risk' }
   ];
 
   const handleImageUpload = (e) => {
@@ -44,48 +48,38 @@ const Report = ({ onBackToHome }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsSubmitting(false);
-    setIsSubmitted(true);
 
+    try {
+      // Get current user info
+      const currentUser = getUserFromToken();
+      
+      // Get type and severity labels
+      const selectedTypeData = incidentTypes.find(t => t.id === selectedType);
+      const selectedSeverityData = severityLevels.find(s => s.id === selectedSeverity);
+      
+      // Prepare report data
+      const reportData = {
+        type: selectedType,
+        typeLabel: selectedTypeData?.typeLabel || selectedType,
+        severity: selectedSeverity,
+        severityLabel: selectedSeverityData?.severityLabel || selectedSeverity,
+        location: location,
+        description: description,
+        images: images.map(img => URL.createObjectURL(img)), // Convert to URLs for display
+        submittedBy: currentUser?.email || 'Anonymous User',
+        coordinates: { lat: 0, lng: 0 } // Default coordinates - could be enhanced with geolocation
+      };
 
-    const handleSubmit = async (e) => {
-  e.preventDefault();
-  setIsSubmitting(true);
-
-  try {
-    const formData = new FormData();
-    formData.append('type', selectedType);
-    formData.append('severity', selectedSeverity);
-    formData.append('location', location);
-    formData.append('description', description);
-
-    // If your app uses authentication, add user's email here (optional)
-    // formData.append('email', user.email); // Example if using context or Redux
-
-    images.forEach((image, index) => {
-      formData.append('images', image);
-    });
-
-    const response = await fetch('http://localhost:8000/api/reports/submit', {
-      method: 'POST',
-      body: formData
-    });
-
-    if (response.ok) {
+      // Add report to context
+      const reportId = addReport(reportData);
+      setSubmittedReportId(reportId);
       setIsSubmitted(true);
-    } else {
-      console.error('Failed to submit report');
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      alert('Failed to submit report. Please try again.');
     }
-  } catch (err) {
-    console.error('Error submitting report:', err);
-  }
 
-  setIsSubmitting(false);
-};
+    setIsSubmitting(false);
 
   };
 
@@ -98,6 +92,7 @@ const Report = ({ onBackToHome }) => {
     setDescription('');
     setImages([]);
     setLocation('');
+    setSubmittedReportId('');
   };
 
   if (isSubmitted) {
@@ -110,7 +105,7 @@ const Report = ({ onBackToHome }) => {
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Report Submitted!</h2>
           <p className="text-gray-600 mb-6">Thank you for helping make our roads safer. Your report has been sent to local authorities.</p>
           <div className="bg-gray-50 rounded-xl p-4 mb-6">
-            <p className="text-sm text-gray-600">Reference ID: <span className="font-mono font-bold text-blue-600">#RSR-2024-{Math.floor(Math.random() * 1000).toString().padStart(3, '0')}</span></p>
+            <p className="text-sm text-gray-600">Reference ID: <span className="font-mono font-bold text-blue-600">#{submittedReportId}</span></p>
           </div>
           <div className="flex flex-col gap-3">
             <button 
