@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useReports } from '../context/ReportsContext';
 import { 
   Search, 
   Filter, 
@@ -17,91 +18,21 @@ import {
 } from 'lucide-react';
 
 const AdminDashboard = () => {
-  const [reports, setReports] = useState([]);
+  const { reports, updateReportStatus, addComment } = useReports();
   const [filteredReports, setFilteredReports] = useState([]);
   const [selectedReport, setSelectedReport] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [severityFilter, setSeverityFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'map'
-  const [newComment, setNewComment] = useState('');
-  const [showCommentModal, setShowCommentModal] = useState(false);
-
-  // Mock data - in real app, this would come from API
-  useEffect(() => {
-    const mockReports = [
-      {
-        id: 'RSR-2024-001',
-        type: 'pothole',
-        typeLabel: 'Pothole',
-        severity: 'high',
-        severityLabel: 'High Risk',
-        location: 'Main Street near City Hall, Colombo',
-        coordinates: { lat: 6.9271, lng: 79.8612 },
-        description: 'Large pothole causing vehicles to swerve into oncoming traffic. Multiple reports from residents.',
         images: [],
-        status: 'pending',
-        submittedAt: '2024-07-25T10:30:00Z',
-        comments: [
-          { id: 1, author: 'Admin John', text: 'Forwarded to road maintenance team', timestamp: '2024-07-25T11:00:00Z' },
-          { id: 2, author: 'Engineer Sarah', text: 'Site inspection scheduled for tomorrow', timestamp: '2024-07-25T14:30:00Z' }
-        ]
-      },
-      {
-        id: 'RSR-2024-002',
-        type: 'lighting',
-        typeLabel: 'Poor Lighting',
-        severity: 'medium',
-        severityLabel: 'Medium Risk',
-        location: 'Galle Road, Mount Lavinia',
-        coordinates: { lat: 6.8382, lng: 79.8646 },
-        description: 'Several street lights are not working along this stretch, making it dangerous for pedestrians at night.',
-        images: [],
-        status: 'in-progress',
-        submittedAt: '2024-07-24T16:45:00Z',
-        comments: [
-          { id: 3, author: 'Admin Mike', text: 'Electrical team notified', timestamp: '2024-07-24T17:00:00Z' }
-        ]
-      },
-      {
-        id: 'RSR-2024-003',
-        type: 'signage',
-        typeLabel: 'Missing Signs',
-        severity: 'low',
-        severityLabel: 'Low Risk',
-        location: 'Kandy Road intersection, Kadawatha',
-        coordinates: { lat: 7.0167, lng: 79.9500 },
-        description: 'Stop sign missing at busy intersection. Drivers are confused about right of way.',
-        images: [],
-        status: 'resolved',
-        submittedAt: '2024-07-23T09:15:00Z',
-        comments: [
-          { id: 4, author: 'Admin John', text: 'New stop sign installed', timestamp: '2024-07-26T10:00:00Z' }
-        ]
-      },
-      {
-        id: 'RSR-2024-004',
-        type: 'bridge',
-        typeLabel: 'Bridge Issue',
-        severity: 'high',
-        severityLabel: 'High Risk',
-        location: 'Old bridge over Kelani River',
-        coordinates: { lat: 6.9553, lng: 79.9254 },
-        description: 'Visible cracks in bridge structure. Locals report shaking when heavy vehicles pass.',
-        images: [],
-        status: 'pending',
-        submittedAt: '2024-07-26T08:20:00Z',
-        comments: []
-      }
-    ];
-    setReports(mockReports);
-    setFilteredReports(mockReports);
-  }, []);
+    setLocalReports(reports);
+    setFilteredReports(reports);
+  }, [reports]);
 
   // Filter reports based on search and filters
   useEffect(() => {
-    let filtered = reports.filter(report => {
+    let filtered = localReports.filter(report => {
       const matchesSearch = report.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            report.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            report.id.toLowerCase().includes(searchTerm.toLowerCase());
@@ -113,7 +44,7 @@ const AdminDashboard = () => {
       return matchesSearch && matchesStatus && matchesSeverity && matchesType;
     });
     setFilteredReports(filtered);
-  }, [reports, searchTerm, statusFilter, severityFilter, typeFilter]);
+  }, [localReports, searchTerm, statusFilter, severityFilter, typeFilter]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -134,26 +65,13 @@ const AdminDashboard = () => {
   };
 
   const handleStatusUpdate = (reportId, newStatus) => {
-    setReports(prev => prev.map(report => 
-      report.id === reportId ? { ...report, status: newStatus } : report
-    ));
+    updateReportStatus(reportId, newStatus);
   };
 
   const handleAddComment = (reportId) => {
     if (!newComment.trim()) return;
     
-    const comment = {
-      id: Date.now(),
-      author: 'Current Admin',
-      text: newComment,
-      timestamp: new Date().toISOString()
-    };
-
-    setReports(prev => prev.map(report => 
-      report.id === reportId 
-        ? { ...report, comments: [...report.comments, comment] }
-        : report
-    ));
+    addComment(reportId, newComment);
     
     setNewComment('');
     setShowCommentModal(false);
@@ -239,7 +157,7 @@ const AdminDashboard = () => {
               <div>
                 <p className="text-sm text-gray-600">Pending</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {reports.filter(r => r.status === 'pending').length}
+                  {localReports.filter(r => r.status === 'pending').length}
                 </p>
               </div>
             </div>
@@ -252,7 +170,7 @@ const AdminDashboard = () => {
               <div>
                 <p className="text-sm text-gray-600">In Progress</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {reports.filter(r => r.status === 'in-progress').length}
+                  {localReports.filter(r => r.status === 'in-progress').length}
                 </p>
               </div>
             </div>
@@ -265,7 +183,7 @@ const AdminDashboard = () => {
               <div>
                 <p className="text-sm text-gray-600">Resolved</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {reports.filter(r => r.status === 'resolved').length}
+                  {localReports.filter(r => r.status === 'resolved').length}
                 </p>
               </div>
             </div>
@@ -278,7 +196,7 @@ const AdminDashboard = () => {
               <div>
                 <p className="text-sm text-gray-600">High Priority</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {reports.filter(r => r.severity === 'high').length}
+                  {localReports.filter(r => r.severity === 'high').length}
                 </p>
               </div>
             </div>

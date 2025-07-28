@@ -65,7 +65,8 @@ export const ReportsProvider = ({ children }) => {
       ...reportData,
       status: 'pending',
       submittedAt: new Date().toISOString(),
-      comments: []
+      comments: [],
+      submittedBy: reportData.submittedBy || 'Anonymous User'
     };
     
     setReports(prev => [newReport, ...prev]);
@@ -81,7 +82,7 @@ export const ReportsProvider = ({ children }) => {
   const addComment = (reportId, comment) => {
     const newComment = {
       id: Date.now(),
-      author: 'Current Admin',
+      author: 'Admin User',
       text: comment,
       timestamp: new Date().toISOString()
     };
@@ -93,12 +94,22 @@ export const ReportsProvider = ({ children }) => {
     ));
   };
 
+  const getReportById = (reportId) => {
+    return reports.find(report => report.id === reportId);
+  };
+
+  const getReportsByUser = (userEmail) => {
+    return reports.filter(report => report.submittedBy === userEmail);
+  };
+
   return (
     <ReportsContext.Provider value={{ 
       reports, 
       addReport, 
       updateReportStatus, 
-      addComment 
+      addComment,
+      getReportById,
+      getReportsByUser
     }}>
       {children}
     </ReportsContext.Provider>
