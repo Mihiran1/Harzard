@@ -4,7 +4,7 @@ import Home from "./pages/Home";
 import Report from "./pages/Report";
 import SafetyMap from "./pages/SafetyMap";
 import Login from './pages/Login'
-import SignUp from './pages/Signup';
+import SignUp from './pages/SignUp';
 import AdminDashboard from './pages/AdminDashboard';
 import UserDashboard from './pages/UserDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
