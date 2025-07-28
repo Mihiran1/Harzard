@@ -25,9 +25,20 @@ const AdminDashboard = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [severityFilter, setSeverityFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
-        images: [],
-    setLocalReports(reports);
-    setFilteredReports(reports);
+  const [localReports, setLocalReports] = useState([]);
+  const [viewMode, setViewMode] = useState('list');
+  const [showCommentModal, setShowCommentModal] = useState(false);
+  const [newComment, setNewComment] = useState('');
+
+  // Initialize local reports
+  useEffect(() => {
+    const reportsWithDefaults = reports.map(report => ({
+      ...report,
+      comments: report.comments || [],
+      images: []
+    }));
+    setLocalReports(reportsWithDefaults);
+    setFilteredReports(reportsWithDefaults);
   }, [reports]);
 
   // Filter reports based on search and filters
